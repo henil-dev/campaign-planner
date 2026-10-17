@@ -95,3 +95,38 @@ footer { color: var(--muted); font-size: 12.5px; padding: 22px 0 40px; border-to
   .nav { gap: 14px; }
   .block { padding: 16px; }
 }
+
+/* result */
+.result-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.result-head h1 { margin: 0; }
+.result-head p { margin: 0 0 2px; }
+.part { font-size: 12.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.07em; margin: 30px 0 10px; }
+.part .num { color: var(--accent); margin-right: 8px; }
+.part .muted { font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+.big-line { font-size: 19px; line-height: 1.4; font-weight: 550; margin: 0 0 10px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.card p { margin: 0 0 8px; }
+.card p:last-child { margin: 0; }
+.variants { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.variant { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: #fcfcfa; }
+.variant-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.variant-head .copy { margin-left: auto; }
+.tag { font-family: var(--mono); font-size: 12px; font-weight: 600; border: 1px solid var(--ink); border-radius: 3px; padding: 0 6px; }
+.ad-headline { font-weight: 650; margin: 0 0 6px; }
+.ad-body { margin: 0 0 8px; white-space: pre-line; }
+.ad-cta { margin: 0; font-size: 13px; color: var(--accent); font-weight: 600; }
+.plain-list { margin: 0; padding-left: 18px; }
+.plain-list li { margin-bottom: 4px; }
+.meta-line { margin-top: 24px; }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.data th { text-align: left; font-size: 12px; font-weight: 550; color: var(--muted); border-bottom: 1px solid var(--line); padding: 6px 8px; }
+table.data td { border-bottom: 1px solid var(--soft); padding: 9px 8px; vertical-align: top; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data .r { text-align: right; }
+
+@media (max-width: 720px) {
+  .cards, .variants { grid-template-columns: 1fr; }
+  table.data { font-size: 13px; }
+}
