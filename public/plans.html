@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saved plans · Campaign Planner</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="/">Campaign Planner</a>
+      <nav class="nav">
+        <a href="/">New plan</a>
+        <a href="/plans" class="on">Saved plans</a>
+        <a href="/admin">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Saved plans</h1>
+    <p class="lede">Every plan is stored with its inputs, so you can open it again exactly as it was generated.</p>
+
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Search by product name">
+    </div>
+    <div class="block" id="list"><p class="empty">Loading…</p></div>
+  </main>
+
+  <script src="/render.js"></script>
+  <script>
+    const { esc, inr, when, LEVEL, BUSINESS, label } = window.Render;
+    const list = document.getElementById('list');
+
+    async function load(q = '') {
+      try {
+        const res = await fetch('/api/plans?limit=100&q=' + encodeURIComponent(q));
+        if (!res.ok) throw new Error();
+        const rows = await res.json();
+        if (!rows.length) {
+          list.innerHTML = `<p class="empty">${q ? 'No plans match that name.' : 'No plans yet. <a href="/">Make the first one.</a>'}</p>`;
+          return;
+        }
+        list.innerHTML = `<table class="data"><thead><tr>
+            <th>#</th><th>Product</th><th>Channels</th><th class="r">Budget</th><th>Readiness</th><th>Created</th></tr></thead><tbody>
+          ${rows.map((r) => `<tr class="link-row" data-id="${r.id}">
+            <td class="num muted">${r.id}</td>
+            <td><a href="/plan?id=${r.id}"><strong>${esc(r.product_name)}</strong></a><div class="small muted">${esc(BUSINESS[r.business_type] || '')}</div></td>
+            <td class="small">${r.channels.split(',').map(label).map(esc).join(', ')}</td>
+            <td class="r num">${inr(r.budget)}</td>
+            <td><span class="num">${r.readiness_score}</span> <span class="chip ${LEVEL[r.readiness_level][1]}">${LEVEL[r.readiness_level][0]}</span>
+              ${r.status !== 'complete' ? '<span class="chip plain">no AI copy</span>' : ''}</td>
+            <td class="small muted">${esc(when(r.created_at))}</td></tr>`).join('')}
+          </tbody></table>`;
+        list.querySelectorAll('tr.link-row').forEach((tr) => tr.addEventListener('click', (e) => {
+          if (e.target.tagName !== 'A') location.href = '/plan?id=' + tr.dataset.id;
+        }));
+      } catch {
+        list.innerHTML = '<p class="empty">Could not load saved plans. Refresh to try again.</p>';
+      }
+    }
+
+    let t;
+    document.getElementById('q').addEventListener('input', (e) => {
+      clearTimeout(t);
+      t = setTimeout(() => load(e.target.value.trim()), 250);
+    });
+    load();
+  </script>
+</body>
+</html>

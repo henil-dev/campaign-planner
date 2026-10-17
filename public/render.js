@@ -4,6 +4,8 @@
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inr = (n) => (n === null || n === undefined || !isFinite(n) ? '–' : '₹' + Math.round(n).toLocaleString('en-IN'));
   const int = (n) => Math.round(n).toLocaleString('en-IN');
+  // SQLite stores UTC as 'YYYY-MM-DD HH:MM:SS'; show it in the viewer's time zone.
+  const when = (s) => new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
   const pct = (n, d = 1) => `${(n * 100).toFixed(d)}%`;
 
   const CHANNEL_LABELS = {
@@ -255,8 +257,41 @@
     html += part(next(), 'A/B test plan', 'rules', ai ? 'tests from the AI, sized by the rules' : '') + tests(r);
     html += part(next(), 'Readiness score', 'rules') + readinessBlock(r);
     if (ai?.assumptions?.length) html += part(next(), 'Check before launch', 'ai') + assumptions(ai);
+    if (r.id) html += feedback(r);
     html += footerMeta(r);
     return html;
+  }
+
+  function feedback(r) {
+    const given = r.feedback === 1 ? 'Marked as useful.' : r.feedback === -1 ? 'Marked as not useful.' : '';
+    return `
+      <div class="feedback" data-id="${esc(r.id)}">
+        <span>Was this plan useful?</span>
+        <button type="button" class="ghost small" data-useful="1">Yes</button>
+        <button type="button" class="ghost small" data-useful="0">No</button>
+        <span class="small muted fb-msg">${given}</span>
+      </div>`;
+  }
+
+  function wireFeedback(root) {
+    const box = root.querySelector('.feedback');
+    if (!box) return;
+    box.querySelectorAll('button').forEach((b) =>
+      b.addEventListener('click', async () => {
+        const msg = box.querySelector('.fb-msg');
+        try {
+          const res = await fetch(`/api/plans/${box.dataset.id}/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ useful: b.dataset.useful === '1' }),
+          });
+          if (!res.ok) throw new Error();
+          msg.textContent = 'Thanks, saved.';
+        } catch {
+          msg.textContent = 'Could not save that. Try again.';
+        }
+      })
+    );
   }
 
   function wireCopyButtons(root) {
@@ -273,7 +308,7 @@
     );
   }
 
-  window.Render = { renderPlan, wireCopyButtons, esc, inr, label, LEVEL, GOALS, BUSINESS };
+  window.Render = { renderPlan, wireCopyButtons, wireFeedback, esc, inr, when, label, LEVEL, GOALS, BUSINESS };
 
   // On the form page: swap the form for the result.
   window.showPlan = function (r) {
@@ -281,9 +316,10 @@
     const formView = document.getElementById('form-view');
     if (!view) return;
     view.innerHTML = renderPlan(r, {
-      actions: '<button type="button" class="ghost" id="edit-btn">Edit inputs</button><button type="button" id="new-btn">New plan</button>',
+      actions: `${r.id ? `<a class="btn ghost" href="/plan?id=${r.id}">Saved as #${r.id}</a>` : ''}<button type="button" class="ghost" id="edit-btn">Edit inputs</button><button type="button" id="new-btn">New plan</button>`,
     });
     wireCopyButtons(view);
+    wireFeedback(view);
     formView.hidden = true;
     view.hidden = false;
     window.scrollTo(0, 0);

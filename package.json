@@ -13,6 +13,10 @@
   },
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "express": "^4.22.3"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
   }
 }
