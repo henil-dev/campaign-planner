@@ -2,9 +2,9 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-try { process.loadEnvFile(); } catch { /* no .env file, use real env */ }
-
 const here = path.dirname(fileURLToPath(import.meta.url));
+try { process.loadEnvFile(path.join(here, '.env')); } catch { /* no .env file, use real env */ }
+
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
