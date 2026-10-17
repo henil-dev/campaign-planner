@@ -181,3 +181,42 @@ table.data tr.link-row:hover td { background: #fafaf7; }
   main { padding: 0; }
   .block, .card, .variant, .stats { break-inside: avoid; }
 }
+
+/* admin */
+.wrap.wide { max-width: 1160px; }
+.stats-6 { grid-template-columns: repeat(6, 1fr); }
+.kpi-note { margin: 0 0 18px; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.day-chart { display: flex; gap: 6px; align-items: flex-end; height: 150px; }
+.day { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.day-bars { flex: 1; width: 100%; display: flex; flex-direction: column-reverse; justify-content: flex-start; background: var(--soft); border-radius: 2px; overflow: hidden; }
+.seg { width: 100%; background: var(--accent); }
+.seg.fail { background: var(--flag); }
+.day-n { font-size: 11px; height: 14px; margin-top: 3px; }
+.day-l { font-size: 11px; color: var(--muted); }
+.key { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: 0; margin: 0 2px 0 6px; background: var(--accent); }
+.key.fail, .key.bad { background: var(--flag); }
+.key.warn { background: #d6b75a; }
+table.hbars { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 8px; }
+table.hbars td { padding: 5px 4px; }
+table.hbars td:first-child { width: 42%; }
+table.hbars .r { text-align: right; width: 70px; white-space: nowrap; }
+.bar-cell { width: auto; }
+.hbar { height: 10px; background: var(--accent); border-radius: 2px; min-width: 2px; }
+.hbar.ok { background: var(--accent); }
+.hbar.warn { background: #d6b75a; }
+.hbar.bad { background: var(--flag); }
+.hbar-stack { display: flex; height: 10px; border-radius: 2px; overflow: hidden; }
+.hbar-stack .hbar { border-radius: 0; height: 10px; min-width: 0; }
+.admin-plans select { width: auto; padding: 4px 6px; font-size: 13px; }
+.admin-plans tr.archived td { opacity: 0.55; }
+.flag { color: var(--flag); }
+.nowrap { white-space: nowrap; }
+table.events td { padding: 6px 8px; }
+
+@media (max-width: 900px) {
+  .stats-6 { grid-template-columns: 1fr 1fr; }
+  .stats-6 .stat { border-bottom: 1px solid var(--line); }
+  .stats-6 .stat:nth-child(2n) { border-right: 0; }
+  .admin-grid { grid-template-columns: 1fr; }
+}
