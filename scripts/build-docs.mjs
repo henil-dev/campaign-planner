@@ -17,7 +17,7 @@ let md = readFileSync(path.join(docs, 'documentation.md'), 'utf8');
 
 // Links
 const links = existsSync(path.join(docs, 'links.json')) ? JSON.parse(readFileSync(path.join(docs, 'links.json'), 'utf8')) : {};
-for (const key of ['replit', 'github', 'video']) {
+for (const key of ['live', 'github', 'video']) {
   const url = links[key];
   md = md.replace(`<!-- LINK:${key.toUpperCase()} -->`, url ? `<a href="${esc(url)}">${esc(url)}</a>` : '<em>add before submitting</em>');
 }
@@ -64,12 +64,12 @@ const xs = [10, 185, 360, 535];
 const diagram = `<figure class="diagram"><svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
   <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
   ${box(xs[0], 20, W, H, 'Browser form', 'product, audience, goal|budget, weeks, market', 'plain')}
-  ${box(xs[1], 20, W, H, 'Express API', 'POST /api/plan|validate, rate limit', 'plain')}
+  ${box(xs[1], 20, W, H, 'API layer', 'claude/api.js (page)|server.js (Node)', 'plain')}
   ${box(xs[2], 20, W, H, 'Channel rules', 'fit score, budget split|forecast', 'rules')}
-  ${box(xs[3], 20, W, H, 'Gemini', 'ideas + ad copy for the|chosen channels (JSON)', 'ai')}
+  ${box(xs[3], 20, W, H, 'Claude', 'ideas + ad copy for the|chosen channels (JSON)', 'ai')}
   ${box(xs[3], 150, W, H, 'Copy checks', 'limits, claims, filler, avoid|one fix-up retry', 'rules')}
   ${box(xs[2], 150, W, H, 'Test sizing + score', 'sample size, weeks|readiness 0-100', 'rules')}
-  ${box(xs[1], 150, W, H, 'SQLite', 'plans, events', 'store')}
+  ${box(xs[1], 150, W, H, 'Page database', 'plans, events|(SQLite in Node)', 'store')}
   ${box(xs[0], 150, W, H, 'Result view', 'tables and cards|no raw JSON', 'plain')}
   ${box(xs[1], 262, W, H, 'Admin dashboard', 'usage, cost, quality|review, export', 'plain')}
   ${arrow(xs[0] + W, 53, xs[1] - 2, 53)}
@@ -83,9 +83,9 @@ const diagram = `<figure class="diagram"><svg viewBox="0 0 700 340" xmlns="http:
   ${arrow(xs[1], 183, xs[0] + W + 2, 183)}
   ${arrow(xs[1] + W / 2, 150 + H, xs[1] + W / 2, 260)}
   <rect x="380" y="275" width="12" height="12" fill="#e2efe9" stroke="#1f6a55"/><text x="398" y="285" font-size="11">rules (deterministic)</text>
-  <rect x="380" y="295" width="12" height="12" fill="#eeefeb" stroke="#676b68"/><text x="398" y="305" font-size="11">AI (Gemini)</text>
+  <rect x="380" y="295" width="12" height="12" fill="#eeefeb" stroke="#676b68"/><text x="398" y="305" font-size="11">AI (Claude; Gemini in Node)</text>
   <rect x="530" y="275" width="12" height="12" fill="#f5eed8" stroke="#866412"/><text x="548" y="285" font-size="11">storage</text>
-  <text x="380" y="327" font-size="10" fill="#555">If Gemini fails, the rules still return channels, budget and tests.</text>
+  <text x="380" y="327" font-size="10" fill="#555">If the model fails, the rules still return channels, budget and tests.</text>
 </svg><figcaption>Request flow. Rules run on both sides of the AI call.</figcaption></figure>`;
 md = md.replace('<!-- DIAGRAM -->', diagram);
 

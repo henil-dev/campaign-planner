@@ -5,9 +5,14 @@ Track 3, Marketing & Growth: Campaign Generator · Henil Shah
 
 | Deliverable | Link |
 |---|---|
-| Live app (Replit) | <!-- LINK:REPLIT --> |
+| Live app (Claude page) | <!-- LINK:LIVE --> |
 | GitHub | <!-- LINK:GITHUB --> |
 | Demo video | <!-- LINK:VIDEO --> |
+
+**Tools.** Built in Claude Code, versioned on GitHub, published as a Claude page (a claude.ai
+artifact) with Claude as the model. The Airtribe team approved Claude in place of Replit,
+whose publishing needs a paid plan. The same code also runs as a Node/Express server with
+Gemini for local development (section 2).
 
 ## 1. What it does and why it is built this way
 
@@ -23,7 +28,7 @@ will suggest five channels and three A/B tests, none of which the budget can fee
 
 - Channel choice, budget split, forecasts and test sizing are plain functions with fixed
   numbers. The same input always gives the same answer, and every number can be traced.
-- Gemini only writes for the channels the rules already picked, in a fixed JSON schema.
+- Claude only writes for the channels the rules already picked, in a fixed JSON shape.
 - The copy is checked by rules after generation. Hard failures go back to the model once.
 - If the model fails, the user still gets the rule-based half of the plan.
 
@@ -31,39 +36,52 @@ will suggest five channels and three A/B tests, none of which the budget can fee
 
 <!-- DIAGRAM -->
 
+**Two ways to run, one pipeline.** `lib/planner.js` takes the model as a plug-in, and every
+page talks to the backend through one small interface (`window.API`). That gives two builds
+from the same files:
+
+| | Live Claude page (submitted) | Local Node server |
+|---|---|---|
+| Where the pipeline runs | In the viewer's browser | In Express (`server.js`) |
+| Model | Claude, through the page's `sample` capability, on the viewer's own Claude account | Gemini 2.5 Flash over REST |
+| Storage | The page's database (`db` capability): `plans` and `events` collections | SQLite: `plans` and `events` tables |
+| Backend interface | `claude/api.js` | `public/api.js` calling the REST API |
+| Admin access | Only people who can edit the page | HTTP Basic auth via `ADMIN_PASSWORD` |
+| Pages | One page with `#new`, `#plans`, `#plan-…`, `#admin` views | `/`, `/plans`, `/plan?id=N`, `/admin` |
+
 | Layer | Files | Responsibility |
 |---|---|---|
-| Frontend | `public/index.html`, `form.js`, `render.js`, `plans.html`, `plan.html`, `admin.html`, `admin.js` | Structured form, client checks, renders every part of the plan as tables and cards |
-| API | `server.js` | Routes, server-side validation, rate limit (20 plans/hour per IP), admin auth |
+| Frontend | `public/index.html`, `form.js`, `render.js`, `views.js`, `admin.js`; `claude/index.html` + `claude/main.js` for the Claude page | Structured form, client checks, renders every part of the plan as tables and cards |
+| Backend interface | `claude/api.js` (Claude page), `server.js` + `public/api.js` (Node) | Validation, saving, feedback, admin actions; Node adds a rate limit of 20 plans/hour per IP |
 | Logic layer (before AI) | `lib/logic/channelPlan.js`, `lib/channels.js` | Channel fit scores, channel selection, budget split, forecast |
-| AI | `lib/prompt.js`, `lib/llm.js` | Prompt with the chosen channels and budgets, Gemini REST call with JSON schema, timeout, retry, model fallback |
+| AI | `lib/prompt.js`; adapters in `claude/api.js` and `lib/llm.js` | Prompt with the chosen channels and budgets plus a JSON schema; Claude adapter on the page, Gemini adapter (timeout, retry, model fallback) in Node |
 | Logic layer (after AI) | `lib/logic/copyCheck.js`, `testPlan.js`, `readiness.js` | Copy checks and one fix-up retry, A/B test sizing, readiness score |
 | Orchestration | `lib/planner.js` | Runs the steps in order and handles the failure cases |
-| Storage | `lib/db.js` | SQLite: plans and events |
-| Monitoring | `lib/stats.js`, admin page | Usage, AI success rate, cost, quality breakdowns, review workflow |
+| Storage | page database (`claude/api.js`), SQLite (`lib/db.js`) | Plans and events |
+| Monitoring | `lib/dashboard.js`, admin view | Usage, AI success rate, cost, quality breakdowns, review workflow, from the same function in both builds |
 
-**Request flow for one plan** (`POST /api/plan`):
+**Request flow for one plan** (`API.createPlan`):
 
-1. `validateInput` cleans and checks every field. Failures return HTTP 422 with a message per field, and a `validation_failed` event is logged.
+1. `validateInput` cleans and checks every field. Failures come back with a message per field, and a `validation_failed` event is logged.
 2. `planChannels` scores the six channels, picks the ones that fit and that the budget can fund, splits the money and forecasts results.
-3. `buildUserPrompt` lists the chosen channels with their budgets and ad formats. `generateJson` calls Gemini with a response schema.
+3. `buildUserPrompt` lists the chosen channels with their budgets and ad formats. The model adapter sends it with the JSON schema (Claude on the page, Gemini in Node).
 4. `shapeOutput` keeps only known fields and only the chosen channels, and trims lengths.
 5. `checkCopy` runs the copy rules. If there is any hard error, or two or more filler/generic hits, the issues are sent back in a second turn. The version with fewer problems is kept.
 6. `sizeTests` works out sample size and time for each test against the channel's forecast traffic.
 7. `readiness` scores the plan from 100 down.
-8. `savePlan` stores the summary columns and the full JSON in one transaction, and logs events.
+8. The plan is saved: summary fields for the dashboard plus the full input and result, and events are logged.
 9. The browser renders the result. No raw JSON is ever shown.
 
 ## 3. Frontend
 
-Plain HTML, CSS and JavaScript with no framework and no build step, so Replit runs it as is.
+Plain HTML, CSS and JavaScript with no framework and no bundler. `npm run build:claude` assembles the Claude page from the same form and dashboard markup the Node pages use, so the two never drift apart. Colours are theme tokens with a light and a dark palette, so the page follows the viewer's claude.ai theme.
 
 **Input form (`/`).** Product name, business type, a description, the audience, one goal
 (reach, leads, sales or installs), monthly budget, length (2 to 12 weeks) and market.
 Optional: average order value, tone, and anything to avoid. Three "try an example" links
 fill realistic inputs (a clay cookware brand, a B2B invoicing tool, a JEE coaching batch).
-Every field is checked in the browser first, with the message under the field. The server
-repeats every check.
+Every field is checked in the browser first, with the message under the field. `validateInput`
+repeats every check before the pipeline runs.
 
 **Result view.** The form is swapped for the plan. Sections are numbered, and each one is
 labelled **rules** or **AI** so it is clear which part came from where:
@@ -80,8 +98,9 @@ labelled **rules** or **AI** so it is clear which part came from where:
 
 <!-- SHOT:result -->
 
-**Saved plans (`/plans`, `/plan?id=N`).** Searchable list. A saved plan renders from the
-stored JSON exactly as it was first shown, has a print layout, and asks "Was this plan useful?".
+**Saved plans (`#plans`, `#plan-<id>`).** Searchable list. A saved plan renders from the
+stored JSON exactly as it was first shown and asks "Was this plan useful?". If the viewer is
+signed out or only has view access, the plan is still shown with a note that it was not saved.
 
 The layout works down to phone width (tables scroll inside their box, the page itself never
 scrolls sideways).
@@ -90,7 +109,12 @@ scrolls sideways).
 
 ## 4. Backend and the logic layer
 
-### 4.1 API
+### 4.1 Backend interface
+
+Both builds expose the same methods on `window.API`: `createPlan`, `listPlans`, `getPlan`,
+`feedback`, `health`, and for admins `stats`, `plans` (filtered), `setReview`, `remove` and
+`exportCsv`. On the Claude page they read and write the page database directly; CSV export goes
+through the page's download prompt. On the Node server they map to these routes:
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -148,7 +172,7 @@ customer (leads goal, assuming 1 in 10 leads buys) follow. All forecasts are sho
 | Missing channel | error | The model skipped a chosen channel |
 
 If the first draft has any error, or two or more filler/generic hits, the issue list goes
-back to Gemini as a second turn ("fix only these problems, keep everything else"). Both
+back to the model as a second turn ("fix only these problems, keep everything else"). Both
 drafts are checked and the one with fewer issues is kept. Anything left is shown on the ad.
 
 ### 4.5 A/B test sizing
@@ -194,53 +218,59 @@ answer leaves out.
 
 | Situation | What happens |
 |---|---|
-| Bad or missing input | 422 with a message per field; shown under each field |
-| No API key | Rule-based plan and a default headline test; banner says the AI step was skipped |
-| Gemini timeout (60s), 429 or 5xx | One retry after 1.5s, then a rule-based plan with the error message |
-| Configured model retired (404) | Falls back to `gemini-flash-latest` once |
-| Model returns invalid JSON | Treated as a retryable error |
+| Bad or missing input | A message under each field; nothing is generated |
+| Viewer signed out of claude.ai, or declined to let the page use Claude | Rule-based plan and a default headline test; a banner says the AI step was skipped and why |
+| Claude usage limit, refusal, empty or cut-off answer | Rule-based plan with a plain message for that case |
+| Model returns text around the JSON | The outermost JSON object is extracted; if none parses, it counts as an AI error |
 | Copy breaks rules | One fix-up turn; leftovers shown as tags on the ad and counted in the score |
-| Too many requests | 20 plans per hour per IP, then HTTP 429 with a plain message |
+| Viewer has view-only access | Plan shown in full with a note that it could not be saved |
+| Node only: Gemini timeout (60s), 429 or 5xx | One retry after 1.5s, then a rule-based plan with the error message |
+| Node only: too many requests | 20 plans per hour per IP, then HTTP 429 |
 
 ## 5. Database design
 
-SQLite through `better-sqlite3`, in WAL mode, file at `data/campaigns.db` (created on start).
+The Claude page stores plans in its built-in document database, in two collections. The Node
+build keeps the same fields in SQLite (`better-sqlite3`, WAL mode, `data/campaigns.db`), with
+`input_json`/`result_json` columns in place of nested objects.
 
-**`plans`**: one row per generated plan.
+**`plans`**: one document per generated plan.
 
 | Column | Type | Notes |
 |---|---|---|
-| id | INTEGER PK | auto-increment, used in `/plan?id=N` |
-| created_at | TEXT | UTC, indexed |
+| id | document id | time-based id, used in `#plan-<id>` (auto-increment integer in SQLite) |
+| created_at | ISO timestamp | UTC; plans are listed newest first |
 | product_name, business_type, goal, market | TEXT | from the input, for search and filters |
 | budget, weeks | INTEGER | |
 | status | TEXT | `complete`, `ai_error`, `no_key` |
 | readiness_score, readiness_level | INTEGER, TEXT | |
-| channels | TEXT | comma-separated channel keys chosen by the rules |
+| channels | list | channel keys chosen by the rules |
 | error_count, warn_count, tests_blocked, retried | INTEGER | quality counters for the dashboard |
-| model, tokens_in, tokens_out, latency_ms, error | | AI call metadata, used for cost and speed |
+| model, latency_ms, error | | AI call metadata for speed and failures (Node also records tokens for cost) |
+| issues | list | each copy issue's text and level, for the dashboard breakdown |
 | review_status | TEXT | `new`, `approved`, `archived`; set by an admin |
 | feedback | INTEGER | 1 useful, −1 not useful, NULL no answer |
-| input_json, result_json | TEXT | the full input and the full plan |
+| input, result | objects | the full input and the full plan, so it re-renders exactly |
 
 **`events`**: an append-only log (`plan_saved`, `retry`, `ai_error`, `validation_failed`,
-`rate_limited`, `review_status`, `plan_deleted`) with an optional `plan_id` (cascade delete).
+`review_status`, `plan_deleted`, and `rate_limited` in Node) with an optional `plan_id`.
 
-Why both summary columns and JSON: the dashboard needs fast counts and filters, which
-columns give; a saved plan has to re-render exactly as first shown, which the stored JSON
-gives without a dozen child tables. The plan is written in one transaction together with
-its events.
+Why summary fields and the full plan in one document: the dashboard needs counts and filters
+over small fields, and a saved plan has to re-render exactly as first shown, which the stored
+result gives without a dozen child records. Plans are readable by people the page is shared
+with; writing needs at least Contributor access, and review status and delete need edit access.
 
 ## 6. Admin dashboard
 
-`/admin`, protected by HTTP Basic auth when `ADMIN_PASSWORD` is set.
+The admin view is shown only to people who can edit the Claude page (others see a short
+note instead, and the nav link stays hidden). In the Node build it is `/admin`, behind HTTP
+Basic auth when `ADMIN_PASSWORD` is set.
 
-- **Health line**: server up, whether the Gemini key is set, which model.
-- **Usage and quality**: plans (and last 7 days), AI success rate, average readiness, share of drafts sent back for fixes, average AI time, AI cost so far and per plan (from token counts and Gemini list prices). A note line adds feedback, approvals, plans with tests the budget can't support, and rejected form submissions.
+- **Health line**: whether Claude and the page database are connected in this view.
+- **Usage and quality**: plans (and last 7 days), AI success rate, average readiness, share of drafts sent back for fixes, average AI time, and AI cost. On the Claude page, calls run on each viewer's own Claude plan, so the page shows no per-token bill; the Node build prices tokens at Gemini list rates. A note line adds feedback, approvals, plans with tests the budget can't support, and rejected form submissions.
 - **Charts** (plain CSS, no chart library): plans per day for 14 days with AI failures stacked in red, readiness mix, channels picked by the rules, copy problems caught by type (must-fix vs warning).
 - **Plans table**: search and filter by readiness, AI status and review state; open a plan, set it to approved or archived, or delete it.
 - **Event log**: the last 40 events with links to plans.
-- **CSV export** of all plans.
+- **CSV export** of all plans, through the page's download prompt.
 
 <!-- SHOT:admin -->
 
@@ -255,4 +285,4 @@ One commit per stage, each one leaving the app runnable.
 - Forecast rates are planning benchmarks kept in one file, not live auction data. Next: let users enter their own past CPC and conversion rate and use those instead.
 - The "avoid" check covers discounts and simple "no X" phrases. A second, cheap model call could judge free-text instructions.
 - The generic-copy check is a proxy (does the copy mention anything from the input?). Feedback data from the admin page could tune it.
-- SQLite on one VM is fine for this scale. Moving to Postgres would be the step before multiple users.
+- Plans are shared with everyone who can open the page. For real teams, each person's plans would move under a private per-user path in the page database.
