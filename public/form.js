@@ -89,7 +89,7 @@
   updateCounters();
 
   // /?example=kulhad opens the form pre-filled (handy for demos and screenshots).
-  const preset = new URLSearchParams(location.search).get('example');
+  const preset = new URLSearchParams(location.search || location.hash.split('?')[1] || '').get('example');
   if (preset && window.EXAMPLES[preset]) fill(window.EXAMPLES[preset]);
 
   form.addEventListener('submit', async (e) => {
@@ -102,15 +102,10 @@
     submitBtn.disabled = true;
     statusEl.textContent = 'Working on it. This usually takes 10 to 25 seconds.';
     try {
-      const res = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 422 && body.fields) return showErrors(body.fields);
-      if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-      if (window.showPlan) window.showPlan(body);
+      const out = await window.API.createPlan(data);
+      if (out.fields) return showErrors(out.fields);
+      if (!out.ok) throw new Error(out.error);
+      if (window.showPlan) window.showPlan(out.plan);
     } catch (err) {
       alertBox.innerHTML = '<div class="alert err"></div>';
       alertBox.firstChild.textContent = err.message;

@@ -21,32 +21,11 @@
 
   <main class="wrap" id="view"><p class="muted">Loading…</p></main>
 
+  <script src="/api.js"></script>
   <script src="/render.js"></script>
+  <script src="/views.js"></script>
   <script>
-    (async () => {
-      const view = document.getElementById('view');
-      const id = Number(new URLSearchParams(location.search).get('id'));
-      if (!id) {
-        view.innerHTML = '<div class="alert err">No plan number in the link. <a href="/plans">See all saved plans.</a></div>';
-        return;
-      }
-      try {
-        const res = await fetch('/api/plans/' + id);
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.error || 'Could not load this plan.');
-        document.title = `${body.input.productName} · Campaign Planner`;
-        view.innerHTML = Render.renderPlan(body, {
-          id,
-          savedAt: Render.when(body.createdAt),
-          actions: '<a class="btn ghost" href="/plans">All plans</a><button type="button" class="ghost" onclick="window.print()">Print</button>',
-        });
-        Render.wireCopyButtons(view);
-        Render.wireFeedback(view);
-      } catch (err) {
-        view.innerHTML = '<div class="alert err"></div>';
-        view.firstChild.textContent = err.message;
-      }
-    })();
+    Views.savedPlan(document.getElementById('view'), new URLSearchParams(location.search).get('id'));
   </script>
 </body>
 </html>

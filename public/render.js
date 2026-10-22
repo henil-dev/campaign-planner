@@ -5,7 +5,7 @@
   const inr = (n) => (n === null || n === undefined || !isFinite(n) ? '–' : '₹' + Math.round(n).toLocaleString('en-IN'));
   const int = (n) => Math.round(n).toLocaleString('en-IN');
   // SQLite stores UTC as 'YYYY-MM-DD HH:MM:SS'; show it in the viewer's time zone.
-  const when = (s) => new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  const when = (s) => new Date(String(s).includes('T') ? s : String(s).replace(' ', 'T') + 'Z').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
   const pct = (n, d = 1) => `${(n * 100).toFixed(d)}%`;
 
   const CHANNEL_LABELS = {
@@ -47,7 +47,7 @@
     return `
       <div class="result-head">
         <div>
-          <p class="small muted">${opts.savedAt ? `Saved plan #${esc(opts.id)} · ${esc(opts.savedAt)}` : 'Campaign plan'}</p>
+          <p class="small muted">${opts.savedAt ? `Saved plan${/^\d+$/.test(opts.id) ? ` #${esc(opts.id)}` : ''} · ${esc(opts.savedAt)}` : 'Campaign plan'}</p>
           <h1>${esc(i.productName)}</h1>
           <p class="muted small">${bits.filter(Boolean).map(esc).join(' · ')}</p>
         </div>
@@ -57,7 +57,7 @@
 
   function statusAlert(r) {
     if (r.status === 'no_key') {
-      return `<div class="alert warn"><strong>The AI step was skipped.</strong> No Gemini API key is set on the server. The channel plan, budget and test sizing below come from the rules and are complete; ideas and ad copy are missing.</div>`;
+      return `<div class="alert warn"><strong>The AI step was skipped.</strong> ${esc(r.meta?.error || '')} The channel plan, budget and test sizing below come from the rules and are complete; ideas and ad copy are missing.</div>`;
     }
     if (r.status === 'ai_error') {
       return `<div class="alert err"><strong>The AI step failed:</strong> ${esc(r.meta?.error || '')}<br>The channel plan, budget and test sizing below still came from the rules. Try again in a minute for the copy.</div>`;
@@ -280,12 +280,7 @@
       b.addEventListener('click', async () => {
         const msg = box.querySelector('.fb-msg');
         try {
-          const res = await fetch(`/api/plans/${box.dataset.id}/feedback`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ useful: b.dataset.useful === '1' }),
-          });
-          if (!res.ok) throw new Error();
+          await window.API.feedback(box.dataset.id, b.dataset.useful === '1');
           msg.textContent = 'Thanks, saved.';
         } catch {
           msg.textContent = 'Could not save that. Try again.';
@@ -316,7 +311,7 @@
     const formView = document.getElementById('form-view');
     if (!view) return;
     view.innerHTML = renderPlan(r, {
-      actions: `${r.id ? `<a class="btn ghost" href="/plan?id=${r.id}">Saved as #${r.id}</a>` : ''}<button type="button" class="ghost" id="edit-btn">Edit inputs</button><button type="button" id="new-btn">New plan</button>`,
+      actions: `${r.id ? `<a class="btn ghost" href="${window.API.links.plan(r.id)}">Saved${/^\d+$/.test(r.id) ? ` as #${r.id}` : ''}</a>` : ''}<button type="button" class="ghost" id="edit-btn">Edit inputs</button><button type="button" id="new-btn">New plan</button>`,
     });
     wireCopyButtons(view);
     wireFeedback(view);

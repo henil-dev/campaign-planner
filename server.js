@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateInput } from './lib/validate.js';
 import { runPlan } from './lib/planner.js';
-import { llmConfigured, modelName } from './lib/llm.js';
+import { llmConfigured, modelName, gemini } from './lib/llm.js';
 import { savePlan, getPlan, listPlans, setFeedback, setReviewStatus, deletePlan, logEvent } from './lib/db.js';
 import { dashboardStats, plansCsv } from './lib/stats.js';
 import crypto from 'node:crypto';
@@ -53,7 +53,7 @@ app.post('/api/plan', async (req, res) => {
     return res.status(429).json({ error: 'That is 20 plans in the last hour from this connection. Try again later.' });
   }
 
-  const result = await runPlan(v.data);
+  const result = await runPlan(v.data, gemini);
   const id = savePlan(result);
   res.json({ id, ...result });
 });

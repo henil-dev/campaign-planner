@@ -1,9 +1,10 @@
+// Admin dashboard. Admin.init() is called by admin.html (Node) or by the #admin route (Claude page).
 (function () {
   const { esc, inr, when, label, LEVEL, BUSINESS } = window.Render;
   const $ = (id) => document.getElementById(id);
   const int = (n) => Math.round(n || 0).toLocaleString('en-IN');
   const share = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–');
-  const STATUS = { complete: ['AI complete', 'ok'], ai_error: ['AI failed', 'bad'], no_key: ['No API key', 'plain'] };
+  const STATUS = { complete: ['AI complete', 'ok'], ai_error: ['AI failed', 'bad'], no_key: ['AI not available', 'plain'] };
   const REVIEW = { new: 'New', approved: 'Approved', archived: 'Archived' };
   const EVENT = {
     plan_saved: 'Plan saved', retry: 'Copy sent back once', ai_error: 'AI error', validation_failed: 'Form rejected',
@@ -15,12 +16,7 @@
     $('admin-alert').firstChild.textContent = msg;
   }
 
-  async function api(url, opts) {
-    const res = await fetch(url, opts);
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-    return body;
-  }
+  const planLink = (id) => esc(window.API.links.plan(id));
 
   function hbars(rows, total) {
     if (!rows.length) return '<p class="empty small">Nothing yet.</p>';
@@ -37,11 +33,13 @@
     const kpi = (k, v, sub) => `<div class="stat"><span class="stat-k">${k}</span><span class="stat-v num">${v}</span><span class="small muted">${sub}</span></div>`;
     $('kpis').innerHTML = [
       kpi('Plans', int(t.plans), `${int(t.last7)} in the last 7 days`),
-      kpi('AI success rate', share(t.complete, t.plans), `${int(t.aiErrors)} failed, ${int(t.noKey)} without key`),
+      kpi('AI success rate', share(t.complete, t.plans), `${int(t.aiErrors)} failed, ${int(t.noKey)} without AI`),
       kpi('Avg. readiness', t.avgScore || '–', `${int(t.ready)} ready to launch`),
       kpi('Sent back for fixes', share(t.retried, t.complete), 'drafts that failed the copy checks once'),
       kpi('Avg. AI time', t.avgLatency ? `${(t.avgLatency / 1000).toFixed(1)}s` : '–', 'complete plans only'),
-      kpi('AI cost so far', `₹${t.costInr.toFixed(2)}`, `₹${t.costPerPlanInr.toFixed(2)} per plan · ${int(t.tokensIn + t.tokensOut)} tokens`),
+      t.costInr === null
+        ? kpi('AI cost', '₹0', "runs on each viewer's own Claude plan")
+        : kpi('AI cost so far', `₹${t.costInr.toFixed(2)}`, `₹${t.costPerPlanInr.toFixed(2)} per plan · ${int(t.tokensIn + t.tokensOut)} tokens`),
     ].join('');
 
     $('kpis').insertAdjacentHTML('afterend', `<p class="small muted kpi-note">
@@ -49,7 +47,7 @@
       ${int(t.approved)} approved by an admin ·
       ${int(t.withBlockedTests)} plans had an A/B test the budget can't support ·
       ${int(s.validationFails7)} form submissions rejected in 7 days ·
-      Cost uses $${s.price.inPerM}/M input and $${s.price.outPerM}/M output tokens at ₹${s.price.usdToInr}/$.</p>`);
+      ${s.price ? `Cost uses $${s.price.inPerM}/M input and $${s.price.outPerM}/M output tokens at ₹${s.price.usdToInr}/$.` : "Claude calls run on the viewer's plan, so there is no per-token bill."}</p>`);
 
     const maxDay = Math.max(...s.days.map((d) => d.plans), 1);
     $('days').innerHTML = s.days
@@ -82,27 +80,25 @@
       ? `<table class="data events"><tbody>${s.events.map((e) => `<tr>
           <td class="small muted nowrap">${esc(when(e.created_at))}</td>
           <td class="small"><span class="chip ${e.kind === 'ai_error' ? 'bad' : e.kind === 'retry' || e.kind === 'validation_failed' ? 'warn' : 'plain'}">${esc(EVENT[e.kind] || e.kind)}</span></td>
-          <td class="small">${e.plan_id ? `<a href="/plan?id=${e.plan_id}">#${e.plan_id}</a> ` : ''}${esc(e.detail || '')}</td></tr>`).join('')}</tbody></table>`
+          <td class="small">${e.plan_id ? `<a href="${planLink(e.plan_id)}">plan</a> ` : ''}${esc(e.detail || '')}</td></tr>`).join('')}</tbody></table>`
       : '<p class="empty small">No events yet.</p>';
   }
 
   async function loadStats() {
     document.querySelectorAll('.kpi-note').forEach((n) => n.remove());
-    renderStats(await api('/api/admin/stats?tz=' + -new Date().getTimezoneOffset()));
+    renderStats(await window.API.admin.stats());
   }
 
   async function loadPlans() {
-    const p = new URLSearchParams({ q: $('f-q').value.trim(), level: $('f-level').value, status: $('f-status').value, review: $('f-review').value });
-    const rows = await api('/api/admin/plans?' + p);
+    const rows = await window.API.admin.plans({ q: $('f-q').value.trim(), level: $('f-level').value, status: $('f-status').value, review: $('f-review').value });
     if (!rows.length) {
       $('plans').innerHTML = '<p class="empty">No plans match these filters.</p>';
       return;
     }
     $('plans').innerHTML = `<table class="data admin-plans"><thead><tr>
-        <th>#</th><th>Product</th><th>Readiness</th><th>AI</th><th class="r">Checks</th><th class="r">Time</th><th>Feedback</th><th>Review</th><th></th></tr></thead><tbody>
+        <th>Product</th><th>Readiness</th><th>AI</th><th class="r">Checks</th><th class="r">Time</th><th>Feedback</th><th>Review</th><th></th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="${r.review_status === 'archived' ? 'archived' : ''}">
-        <td class="num muted">${r.id}</td>
-        <td><a href="/plan?id=${r.id}"><strong>${esc(r.product_name)}</strong></a>
+        <td><a href="${planLink(r.id)}"><strong>${esc(r.product_name)}</strong></a>
           <div class="small muted">${esc(BUSINESS[r.business_type] || '')} · ${inr(r.budget)} · ${esc(when(r.created_at))}</div></td>
         <td><span class="num">${r.readiness_score}</span> <span class="chip ${LEVEL[r.readiness_level][1]}">${LEVEL[r.readiness_level][0]}</span></td>
         <td><span class="chip ${STATUS[r.status][1]}">${STATUS[r.status][0]}</span>${r.retried ? '<span class="chip warn">retried</span>' : ''}</td>
@@ -116,16 +112,16 @@
     $('plans').querySelectorAll('select.review').forEach((sel) =>
       sel.addEventListener('change', async () => {
         try {
-          await api(`/api/admin/plans/${sel.dataset.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewStatus: sel.value }) });
+          await window.API.admin.setReview(sel.dataset.id, sel.value);
           await Promise.all([loadPlans(), loadStats()]);
         } catch (e) { showError(e.message); }
       })
     );
     $('plans').querySelectorAll('button.del').forEach((b) =>
       b.addEventListener('click', async () => {
-        if (!confirm(`Delete plan #${b.dataset.id} (${b.dataset.name})? This can't be undone.`)) return;
+        if (!confirm(`Delete the plan for ${b.dataset.name}? This can't be undone.`)) return;
         try {
-          await api(`/api/admin/plans/${b.dataset.id}`, { method: 'DELETE' });
+          await window.API.admin.remove(b.dataset.id);
           await Promise.all([loadPlans(), loadStats()]);
         } catch (e) { showError(e.message); }
       })
@@ -134,12 +130,10 @@
 
   async function loadHealth() {
     try {
-      const h = await api('/api/health');
-      $('health').innerHTML = h.llm
-        ? `Server up · Gemini key set · model <span class="num">${esc(h.model)}</span>`
-        : 'Server up · <span class="flag">No GEMINI_API_KEY set: plans will have no AI copy</span>';
+      const h = await window.API.health();
+      $('health').innerHTML = h.ok ? esc(h.text) : `<span class="flag">${esc(h.text)}</span>`;
     } catch {
-      $('health').textContent = 'Server did not answer the health check.';
+      $('health').textContent = 'Could not check the AI connection.';
     }
   }
 
@@ -152,9 +146,18 @@
     }
   }
 
-  let t;
-  $('f-q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => loadPlans().catch((e) => showError(e.message)), 250); });
-  ['f-level', 'f-status', 'f-review'].forEach((id) => $(id).addEventListener('change', () => loadPlans().catch((e) => showError(e.message))));
-  $('refresh').addEventListener('click', loadAll);
-  loadAll();
+  let wired = false;
+  function init() {
+    if (!wired) {
+      wired = true;
+      let t;
+      $('f-q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => loadPlans().catch((e) => showError(e.message)), 250); });
+      ['f-level', 'f-status', 'f-review'].forEach((id) => $(id).addEventListener('change', () => loadPlans().catch((e) => showError(e.message))));
+      $('refresh').addEventListener('click', loadAll);
+      $('export').addEventListener('click', () => window.API.admin.exportCsv().catch((e) => showError(e.message)));
+    }
+    loadAll();
+  }
+
+  window.Admin = { init };
 })();
