@@ -51,7 +51,7 @@
       view.innerHTML = renderPlan(plan, {
         id,
         savedAt: when(plan.createdAt),
-        actions: `<a class="btn ghost" href="${window.API.links.plans}">All plans</a><button type="button" class="ghost" onclick="window.print()">Print</button>`,
+        actions: `<a class="btn ghost" href="${window.API.links.plans}">All plans</a>${window.API.canPrint ? '<button type="button" class="ghost" onclick="window.print()">Print</button>' : ''}`,
       });
       wireCopyButtons(view);
       wireFeedback(view);

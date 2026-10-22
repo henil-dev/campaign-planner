@@ -119,7 +119,13 @@
     );
     $('plans').querySelectorAll('button.del').forEach((b) =>
       b.addEventListener('click', async () => {
-        if (!confirm(`Delete the plan for ${b.dataset.name}? This can't be undone.`)) return;
+        // Two clicks instead of confirm(): dialogs are blocked inside claude.ai.
+        if (!b.classList.contains('danger')) {
+          b.classList.add('danger');
+          b.textContent = 'Confirm delete';
+          setTimeout(() => { b.classList.remove('danger'); b.textContent = 'Delete'; }, 4000);
+          return;
+        }
         try {
           await window.API.admin.remove(b.dataset.id);
           await Promise.all([loadPlans(), loadStats()]);

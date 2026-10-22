@@ -244,7 +244,7 @@
   }
 
   function renderPlan(r, opts = {}) {
-    let html = header(r, opts) + statusAlert(r) + summary(r);
+    let html = header(r, opts) + statusAlert(r) + (r.saveNote ? `<div class="alert info">${esc(r.saveNote)}</div>` : '') + summary(r);
     const ai = r.ai;
     let n = 0;
     const next = () => String(++n).padStart(2, '0');
@@ -296,7 +296,14 @@
           await navigator.clipboard.writeText(b.dataset.copy);
           b.textContent = 'Copied';
         } catch {
-          b.textContent = 'Copy failed';
+          // Clipboard refused (some app views): select the ad text so it can be copied by hand.
+          const box = b.closest('.variant');
+          const range = document.createRange();
+          range.selectNodeContents(box.querySelector('.ad-headline').parentNode);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          b.textContent = 'Selected, press Ctrl+C';
         }
         setTimeout(() => (b.textContent = 'Copy'), 1500);
       })

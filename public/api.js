@@ -33,6 +33,7 @@
     getPlan: (id) => must('/api/plans/' + encodeURIComponent(id)),
     feedback: (id, useful) => must(`/api/plans/${encodeURIComponent(id)}/feedback`, json('POST', { useful })),
 
+    canPrint: true,
     canSeeAdmin: async () => true,
     async health() {
       const h = await must('/api/health');

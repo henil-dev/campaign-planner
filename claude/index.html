@@ -1,0 +1,213 @@
+<title>Campaign Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#new">Campaign Planner</a>
+    <nav class="nav">
+      <a href="#new" data-view="new">New plan</a>
+      <a href="#plans" data-view="plans">Saved plans</a>
+      <a href="#admin" data-view="admin" id="nav-admin" hidden>Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="view-new">
+
+    <section id="form-view">
+      <h1>Plan a campaign</h1>
+      <p class="lede">Describe the product, who it's for and what you can spend each month. You get campaign ideas,
+        ad copy per channel, a budget split and an A/B test plan sized to what the budget can buy.</p>
+
+      <div id="form-alert"></div>
+
+      <form id="plan-form" class="block" novalidate>
+        <div class="block-head">
+          <h2>About the product</h2>
+          <span class="small muted">Try an example:
+            <button type="button" class="link" data-example="kulhad">clay cookware brand</button>,
+            <button type="button" class="link" data-example="paynudge">B2B invoicing tool</button>,
+            <button type="button" class="link" data-example="physics">JEE coaching</button>
+          </span>
+        </div>
+
+        <div class="cols">
+          <div class="field">
+            <label for="productName">Product or brand name</label>
+            <input id="productName" name="productName" maxlength="60" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="businessType">Type of business</label>
+            <select id="businessType" name="businessType">
+              <option value="">Choose one</option>
+              <option value="b2b_saas">B2B software / SaaS</option>
+              <option value="d2c">D2C brand / online store</option>
+              <option value="consumer_app">Consumer app</option>
+              <option value="education">Education / courses</option>
+              <option value="local">Local business (clinic, gym, store)</option>
+              <option value="finance">Finance / fintech</option>
+              <option value="health">Health & wellness</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="description">What it does and why someone would buy it
+            <span class="counter" data-for="description"></span></label>
+          <textarea id="description" name="description" maxlength="600" rows="3"
+            placeholder="What you sell, the price, and what makes it different from what people use today."></textarea>
+        </div>
+
+        <div class="field">
+          <label for="audience">Who it's for <span class="counter" data-for="audience"></span></label>
+          <textarea id="audience" name="audience" maxlength="400" rows="2"
+            placeholder="Age or role, where they live, what they care about, what they use now."></textarea>
+        </div>
+
+        <div class="field">
+          <span class="label">Main goal for this campaign</span>
+          <div class="choices" id="goal-choices">
+            <label><input type="radio" name="goal" value="awareness">Get known (reach)</label>
+            <label><input type="radio" name="goal" value="leads">Leads / sign-ups</label>
+            <label><input type="radio" name="goal" value="sales">Online sales</label>
+            <label><input type="radio" name="goal" value="installs">App installs</label>
+          </div>
+        </div>
+
+        <div class="cols-3">
+          <div class="field">
+            <label for="budget">Monthly budget <span class="hint">(₹)</span></label>
+            <input id="budget" name="budget" inputmode="numeric" placeholder="e.g. 50000">
+          </div>
+          <div class="field">
+            <label for="weeks">Campaign length</label>
+            <select id="weeks" name="weeks">
+              <option value="2">2 weeks</option>
+              <option value="4" selected>4 weeks</option>
+              <option value="6">6 weeks</option>
+              <option value="8">8 weeks</option>
+              <option value="12">12 weeks</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="market">Where you sell</label>
+            <select id="market" name="market">
+              <option value="india_metro">India, metro cities</option>
+              <option value="india_all">India, nationwide</option>
+              <option value="international">US / UK / Europe</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="optional">
+          <div class="cols-3">
+            <div class="field">
+              <label for="orderValue">Avg. order or deal value <span class="hint">(₹, optional)</span></label>
+              <input id="orderValue" name="orderValue" inputmode="numeric" placeholder="e.g. 1800">
+            </div>
+            <div class="field">
+              <label for="tone">Tone <span class="hint">(optional)</span></label>
+              <select id="tone" name="tone">
+                <option value="plain">Plain and direct</option>
+                <option value="friendly">Warm and friendly</option>
+                <option value="premium">Premium, understated</option>
+                <option value="playful">Playful</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="avoid">Anything to avoid <span class="hint">(optional)</span></label>
+              <input id="avoid" name="avoid" maxlength="200" placeholder="e.g. no discounts">
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" id="submit-btn">Build the plan</button>
+          <button type="reset" class="ghost">Clear</button>
+          <span id="status" class="small muted"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="result-view" hidden></section>
+  
+  </div>
+
+  <div id="view-plans" hidden>
+    <h1>Saved plans</h1>
+    <p class="lede">Every plan is stored with its inputs, so you can open it again exactly as it was generated.</p>
+    <div class="toolbar"><input id="q" type="search" placeholder="Search by product name"></div>
+    <div class="block" id="list"><p class="empty">Loading…</p></div>
+  </div>
+
+  <div id="view-plan" hidden>
+    <div id="plan-view"></div>
+  </div>
+
+  <div id="view-admin" hidden>
+    <div id="admin-locked" class="alert info" hidden>The admin dashboard is only shown to people who can edit this page.</div>
+
+    <div class="block-head">
+      <div>
+        <h1>Admin</h1>
+        <p class="muted small" id="health">Checking server…</p>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" id="refresh">Refresh</button>
+        <button type="button" class="ghost" id="export">Export CSV</button>
+      </div>
+    </div>
+
+    <div id="admin-alert"></div>
+    <div id="admin-body" hidden>
+
+    <h2 class="part">Usage and quality</h2>
+    <div class="stats stats-6" id="kpis"></div>
+
+    <div class="admin-grid">
+      <div class="block">
+        <div class="block-head"><h3>Plans per day</h3><span class="small muted">last 14 days · <span class="key fail"></span> AI step failed or skipped</span></div>
+        <div id="days" class="day-chart"></div>
+      </div>
+      <div class="block">
+        <div class="block-head"><h3>Readiness</h3><span class="small muted">all plans</span></div>
+        <div id="levels"></div>
+      </div>
+      <div class="block">
+        <div class="block-head"><h3>Channels picked by the rules</h3></div>
+        <div id="channels"></div>
+      </div>
+      <div class="block">
+        <div class="block-head"><h3>Copy problems caught</h3><span class="small muted">latest 300 plans</span></div>
+        <div id="issues"></div>
+      </div>
+    </div>
+
+    <h2 class="part">Plans</h2>
+    <div class="toolbar">
+      <input id="f-q" type="search" placeholder="Search product">
+      <select id="f-level"><option value="">Any readiness</option><option value="ready">Ready to launch</option><option value="review">Review flagged items</option><option value="rework">Needs rework</option></select>
+      <select id="f-status"><option value="">Any AI status</option><option value="complete">AI complete</option><option value="ai_error">AI failed</option><option value="no_key">No API key</option></select>
+      <select id="f-review"><option value="">Any review state</option><option value="new">New</option><option value="approved">Approved</option><option value="archived">Archived</option></select>
+    </div>
+    <div class="block" id="plans"><p class="empty">Loading…</p></div>
+
+    <h2 class="part">Event log</h2>
+    <div class="block" id="events"></div>
+  
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap">Channel and budget rules run in your browser; the copy is written by Claude on your own account and checked before it is shown.
+  Source: <a href="https://github.com/henil-dev/campaign-planner">github.com/henil-dev/campaign-planner</a></div></footer>
+
+<script src="render.js"></script>
+<script src="examples.js"></script>
+<script src="form.js"></script>
+<script src="views.js"></script>
+<script src="admin.js"></script>
+<script type="module" src="main.js"></script>

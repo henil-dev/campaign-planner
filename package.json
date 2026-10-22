@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "docs": "node scripts/build-docs.mjs",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "build:claude": "node scripts/build-claude.mjs"
   },
   "engines": {
     "node": ">=20"
