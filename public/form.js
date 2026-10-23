@@ -89,7 +89,7 @@
   updateCounters();
 
   // /?example=kulhad opens the form pre-filled (handy for demos and screenshots).
-  const preset = new URLSearchParams(location.search || location.hash.split('?')[1] || '').get('example');
+  const preset = new URLSearchParams(location.search).get('example') || new URLSearchParams(location.hash.split('?')[1] || '').get('example');
   if (preset && window.EXAMPLES[preset]) fill(window.EXAMPLES[preset]);
 
   form.addEventListener('submit', async (e) => {

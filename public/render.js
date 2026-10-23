@@ -1,5 +1,10 @@
 // Turns a plan result from the API into HTML. Used by the form page and the saved-plan page.
 (function () {
+  // ?theme=light or ?theme=dark forces a palette (used for documentation screenshots).
+  // Inside claude.ai the viewer's own theme setting wins; this only reads the query string.
+  const forced = new URLSearchParams(location.search).get('theme');
+  if (forced === 'light' || forced === 'dark') document.documentElement.dataset.theme = forced;
+
   const esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inr = (n) => (n === null || n === undefined || !isFinite(n) ? '–' : '₹' + Math.round(n).toLocaleString('en-IN'));
