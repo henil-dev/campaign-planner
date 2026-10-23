@@ -9,7 +9,8 @@
     "dev": "node --watch server.js",
     "docs": "node scripts/build-docs.mjs",
     "screenshots": "node scripts/screenshots.mjs",
-    "build:claude": "node scripts/build-claude.mjs"
+    "build:claude": "node scripts/build-claude.mjs",
+    "package": "node scripts/package-submission.mjs"
   },
   "engines": {
     "node": ">=20"

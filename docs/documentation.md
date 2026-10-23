@@ -256,13 +256,15 @@ build keeps the same fields in SQLite (`better-sqlite3`, WAL mode, `data/campaig
 
 Why summary fields and the full plan in one document: the dashboard needs counts and filters
 over small fields, and a saved plan has to re-render exactly as first shown, which the stored
-result gives without a dozen child records. Plans are readable by people the page is shared
-with; writing needs at least Contributor access, and review status and delete need edit access.
+result gives without a dozen child records. Access follows the page's sharing: anyone who can
+open the page can read every plan, and saving a plan needs at least Contributor access
+(checked against the live database: a view-only user can read but not write, a Contributor can).
 
 ## 6. Admin dashboard
 
 The admin view is shown only to people who can edit the Claude page (others see a short
-note instead, and the nav link stays hidden). In the Node build it is `/admin`, behind HTTP
+note instead, and the nav link stays hidden). This is enforced in the interface only; see
+the limits in section 9 for what the database itself allows. In the Node build it is `/admin`, behind HTTP
 Basic auth when `ADMIN_PASSWORD` is set.
 
 - **Health line**: whether Claude and the page database are connected in this view.
@@ -291,10 +293,13 @@ three.
 - **The retry has not fired on a real run yet.** Because every draft passed, the fix-up retry was only tested against a stand-in model that returns deliberately bad copy (over-long headlines, filler, generic lines). It worked there: the first draft had 7 issues, the retry brought the plan to a better draft, and the dashboard counted it.
 - **The rules caught what a chat answer would not.** In every run at least one of the model's suggested A/B tests was marked "not enough traffic" (Kulhad 2 of 3, PayNudge 1 of 3, Saturday Physics 2 of 3), which cost each plan 10 to 20 readiness points.
 - **Speed.** Each plan took 13 to 20 seconds, almost all of it the Claude call.
+- **Phone width.** The form, saved plans, three real plan pages and the admin view were checked at 375px: no sideways scrolling, and wide tables scroll inside their own box.
 
 ## 9. Limits and what I'd do next
 
 - Forecast rates are planning benchmarks kept in one file, not live auction data. Next: let users enter their own past CPC and conversion rate and use those instead.
 - The "avoid" check covers discounts and simple "no X" phrases. A second, cheap model call could judge free-text instructions.
 - The generic-copy check is a proxy (does the copy mention anything from the input?). Feedback data from the admin page could tune it.
+- On the Claude page the Admin actions (review status, delete) are hidden from people who cannot edit the page, but the database only checks the access level. I tested this: a Contributor can change any plan directly, even though the interface does not offer it. The fix is to move review status into a separate collection with an admin-only rule, and plans into per-person paths. For a page shared only with trusted people this is acceptable; for a public one it is not.
 - Plans are shared with everyone who can open the page. For real teams, each person's plans would move under a private per-user path in the page database.
+- The Node build has the stricter version of this: admin routes sit behind a password, and the API is the only way to reach the database.
