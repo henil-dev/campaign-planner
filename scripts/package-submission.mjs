@@ -81,4 +81,4 @@ Not mentioned in the brief but worth knowing: the live page runs the pipeline in
 Optional, 30 seconds: in a terminal run \`npm install\` and \`npm start\`, open http://localhost:3000/admin, and show that the Node build has a real API and SQLite database behind the same screens.
 `);
 
-console.log('\\nSubmission folder ready:', out);
+console.log('Submission folder ready:', out);
