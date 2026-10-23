@@ -280,7 +280,19 @@ One commit per stage, each one leaving the app runnable.
 
 <!-- COMMITS -->
 
-## 8. Limits and what I'd do next
+## 8. What the real runs showed
+
+The live page was run on the three example inputs with Claude. Four runs were saved in total
+(Kulhad Co. twice, PayNudge, Saturday Physics). The screenshots above come from the last
+three.
+
+- **A bug that only real output showed.** In the first Kulhad run, the audience insight ended mid-word ("Seasoned-before-shipping ans"). My length cap of 300 characters was too tight for Claude's longer answers. The caps are now higher, text that still exceeds a cap is cut at a word and marked with an ellipsis, and the prompt asks for two sentences at most. The three later runs were not cut.
+- **Copy quality.** All four runs passed the copy checks on the first draft: no filler words, no risky claims, nothing over a channel's length limit (the Google headlines were 27 to 29 of 30 characters), and the "no discounts above 10%" and "no health cure claims" notes were respected. Copy named real details from the input (Khurja, ₹1,499, Tally and Zoho Books, UPI, the free first class).
+- **The retry has not fired on a real run yet.** Because every draft passed, the fix-up retry was only tested against a stand-in model that returns deliberately bad copy (over-long headlines, filler, generic lines). It worked there: the first draft had 7 issues, the retry brought the plan to a better draft, and the dashboard counted it.
+- **The rules caught what a chat answer would not.** In every run at least one of the model's suggested A/B tests was marked "not enough traffic" (Kulhad 2 of 3, PayNudge 1 of 3, Saturday Physics 2 of 3), which cost each plan 10 to 20 readiness points.
+- **Speed.** Each plan took 13 to 20 seconds, almost all of it the Claude call.
+
+## 9. Limits and what I'd do next
 
 - Forecast rates are planning benchmarks kept in one file, not live auction data. Next: let users enter their own past CPC and conversion rate and use those instead.
 - The "avoid" check covers discounts and simple "no X" phrases. A second, cheap model call could judge free-text instructions.

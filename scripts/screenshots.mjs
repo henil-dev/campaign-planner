@@ -29,8 +29,8 @@ if (!browser) throw new Error('No Edge or Chrome found.');
 
 const shots = [
   { name: 'form', url: url(formPath), size: '1100,1180' },
-  { name: 'result', url: url(resultPath), size: '1100,2300' },
-  { name: 'admin', url: url(adminPath), size: '1240,1500' },
+  { name: 'result', url: url(resultPath), size: '1100,3400' },
+  { name: 'admin', url: url(adminPath), size: '1240,1760' },
 ];
 
 for (const s of shots) {

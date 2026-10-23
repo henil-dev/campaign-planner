@@ -38,9 +38,9 @@ md = md.replace('<!-- COMMITS -->', commits);
 
 // Screenshots, if captured
 const captions = {
-  result: 'Result view for the Kulhad Co. example (top of the plan).',
-  form: 'Input form with the "try an example" links.',
-  admin: 'Admin dashboard.',
+  result: 'A saved plan from a real run of the Kulhad Co. example on the live Claude page.',
+  form: 'Input form on the live page, filled with the Kulhad Co. example.',
+  admin: 'Admin dashboard on the live page after three real runs (Kulhad Co., PayNudge, Saturday Physics).',
 };
 md = md.replace(/<!-- SHOT:(\w+) -->/g, (_, name) => {
   const file = path.join(docs, 'img', `${name}.png`);
