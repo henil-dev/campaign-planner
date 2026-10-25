@@ -1,6 +1,7 @@
 // Collects everything that gets submitted into one folder next to the repo:
 //   ../Build an AI-Powered Workflow System - Henil Shah/
 //     Campaign-Planner-Documentation.pdf   upload this on Airtribe
+//     Demo-Video-Script.pdf                what to say and show in the 5 minute video
 //     Submission.md                        links to paste, brief checklist, demo outline
 //     source-code.zip                      the repo at HEAD (git archive)
 //     screenshots/                         the images used in the PDF
@@ -18,6 +19,7 @@ execFileSync(process.execPath, [path.join(root, 'scripts', 'build-docs.mjs')], {
 
 mkdirSync(out, { recursive: true });
 copyFileSync(path.join(root, 'docs', 'Campaign-Planner-Documentation.pdf'), path.join(out, 'Campaign-Planner-Documentation.pdf'));
+execFileSync(process.execPath, [path.join(root, 'scripts', 'build-video-script.mjs'), path.join(out, 'Demo-Video-Script.pdf')], { cwd: root, stdio: 'inherit' });
 
 // Source: tracked files at HEAD only, so .env, node_modules and the local database never go in.
 const zip = path.join(out, 'source-code.zip');
@@ -45,7 +47,7 @@ Track 3, Marketing & Growth. Product: Campaign Generator ("Campaign Planner").
 | Documentation (PDF) | \`Campaign-Planner-Documentation.pdf\` (in this folder) |
 | Replit project link | Not used. The live app is a Claude page: ${links.live} |
 | GitHub repository link | ${links.github} (${commits} commits) |
-| Demo video (Loom or Drive) | ${video} |
+| Demo video (Loom or Drive) | ${video}, script in \`Demo-Video-Script.pdf\` |
 
 The PDF's first page repeats the live app, GitHub and video links.
 
@@ -67,7 +69,7 @@ Before submitting: open the live page's **Share** menu and turn on link sharing,
 
 Not mentioned in the brief but worth knowing: the live page runs the pipeline in the browser, so the separate backend and SQLite database exist in the Node build only. The PDF explains both (section 2).
 
-## Demo video outline (5 to 8 minutes)
+## Demo video outline (under 5 minutes)
 
 1. 0:00 The problem: a chat answer suggests too many channels and tests the budget cannot feed.
 2. 0:45 Fill the form (use the clay cookware example), show the validation by leaving a field empty first.
